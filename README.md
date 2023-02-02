@@ -4,7 +4,7 @@ This is the same software I use in the public server at floatfromskin.tryrecords
 You can learn to host your own in Setup section.
 
 # Costs with public server
-
+Currently using an EC2 linux t2.micro instance in us-west-2 (Oregon) as part of the free tier which expires in August 2017 (aproximate costs after free tier expires: 15€/mo)
 
 # Why
 Since you can't make the request for the skin information from the browser you need an external server to work as a proxy between your browser and the Steam servers.  
