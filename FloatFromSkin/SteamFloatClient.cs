@@ -17,6 +17,8 @@ namespace FloatFromSkin
         private static string EmailAuthCode;
         private static string TwoFactorAuthCode;
 
+        private static uint LoginID = 0;
+
         private static bool IsRunning = false;
 
         private static SteamClient steamClient;
@@ -210,10 +212,22 @@ namespace FloatFromSkin
                 sentryHash = CryptoHelper.SHAHash(sentryFile);
             }
 
+            if(Properties.Settings.Default.LoginID == 0)
+            {
+                //Generate new LoginID (it is stored if the login is successful)
+                Random RandomInstance = new Random();
+                LoginID = (uint) RandomInstance.Next(0, int.MaxValue);
+            }
+            else
+            {
+                LoginID = Properties.Settings.Default.LoginID;
+            }
+
             try
             {
                 steamUser.LogOn(new SteamUser.LogOnDetails
                 {
+                    LoginID = LoginID,
                     Username = Username,
                     Password = Password,
                     AuthCode = EmailAuthCode,
@@ -234,6 +248,19 @@ namespace FloatFromSkin
         private static void OnDisconnected(SteamClient.DisconnectedCallback callback)
         {
             Console.WriteLine("Disconnected from Steam");
+
+            /*switch (callback.)
+            {
+                case EResult.LogonSessionReplaced:
+                    Logging.LogGenericInfo(BotName, "This is primary account, changing logic alt -> main");
+                    IsBeingUsedAsPrimaryAccount = true;
+                    break;
+                case EResult.AlreadyLoggedInElsewhere:
+                case EResult.LoggedInElsewhere:
+                case EResult.LogonSessionReplaced:
+                    LoggedInElsewhere = true;
+                    break;
+            }*/
         }
 
         private static void OnLoggedOn(SteamUser.LoggedOnCallback callback)
@@ -269,6 +296,9 @@ namespace FloatFromSkin
             }
 
             Console.Title = Username + " - Float From Skin";
+
+            //Save LoginID
+            Properties.Settings.Default.LoginID = LoginID;
 
             // save the current cellid somewhere. if we lose our saved server list, we can use this when retrieving
             // servers from the Steam Directory.

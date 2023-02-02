@@ -94,5 +94,17 @@ namespace FloatFromSkin.Properties {
                 this["Servers_base_64"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public uint LoginID {
+            get {
+                return ((uint)(this["LoginID"]));
+            }
+            set {
+                this["LoginID"] = value;
+            }
+        }
     }
 }
