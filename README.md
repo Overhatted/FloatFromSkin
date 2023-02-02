@@ -8,7 +8,7 @@ Since you can't make the request for the skin information from the browser you n
 Steam throttles requests very aggressively so this app can only make one request every 1.4 seconds per steam account. This means we need a lot of steam accounts with a Counter-Strike: Global Offensive copy each.
 
 # Contribute
-If you want to contribute you can donate a copy of Counter-Strike: Global Offensive to overhatted@gmail.com which is also the email I use to publish the Chrome Web Store extension. The public server is currently located in the United States.
+If you want to contribute you can donate a copy of Counter-Strike: Global Offensive to overhatted@gmail.com which is also the email I use to publish the Chrome Web Store extension. The public server is currently located in the European Union region (Ireland).
 
 # How it works
 This is a very simple console application that receives requests from your browser over Web Sockets (port 8000 by default but you can easily change it).  
