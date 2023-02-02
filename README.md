@@ -1,5 +1,7 @@
 # Float From Skin Server
-Works as server to https://chrome.google.com/webstore/detail/float-from-skin/nlheooelajnkbnpgjojileplpjhkcham
+Works as server to:
+Chrome extension: https://chrome.google.com/webstore/detail/float-from-skin/nlheooelajnkbnpgjojileplpjhkcham  
+Firefox extension: https://addons.mozilla.org/en-US/firefox/addon/float-from-skin/  
 This is the same software I use in the public server at floatfromskin.tryrecords.com.  
 You can learn to host your own in Setup section.
 
