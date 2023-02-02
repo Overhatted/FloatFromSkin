@@ -12,7 +12,7 @@ It then asks the Steam Servers for information about the skin. To do this it nee
 After it received the information on the skin it sends that information to your browser.
 
 # Account to use
-You can't be logged in in this app and on the Official Steam Client at the same time (it might be possible but I don't know how to do it yet).  
+You can't be logged in in this app and on the Official Steam Client on the same computer at the same time (it might be possible but I don't know how to do it yet).  
 You also need to have CS GO on the account you are going to use for this app.  
 Which is why you will probably want to use this app with and alt account.
 
