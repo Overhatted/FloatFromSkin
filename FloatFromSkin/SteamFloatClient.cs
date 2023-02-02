@@ -133,12 +133,12 @@ namespace FloatFromSkin
             {
                 // since we don't have a list of servers saved, load the latest list of Steam servers
                 // from the Steam Directory.
-                var loadServersTask = SteamDirectory.Initialize(Properties.Settings.Default.Cell_id);
-                loadServersTask.Wait();
+                System.Threading.Tasks.Task LoadServersTask = SteamDirectory.Initialize(Properties.Settings.Default.Cell_id);
+                LoadServersTask.Wait();
 
-                if (loadServersTask.IsFaulted)
+                if (LoadServersTask.IsFaulted)
                 {
-                    Console.WriteLine("Error loading server list from directory: {0}", loadServersTask.Exception.Message);
+                    Console.WriteLine("Error loading server list from directory: {0}", LoadServersTask.Exception.Message);
                     return;
                 }
             }
@@ -153,9 +153,9 @@ namespace FloatFromSkin
             {
                 using (BinaryWriter writer = new BinaryWriter(fs))
                 {
-                    foreach (var endPoint in CMClient.Servers.GetAllEndPoints())
+                    foreach (IPEndPoint endPoint in CMClient.Servers.GetAllEndPoints())
                     {
-                        var addressBytes = endPoint.Address.GetAddressBytes();
+                        byte[] addressBytes = endPoint.Address.GetAddressBytes();
                         writer.Write(addressBytes.Length);
                         writer.Write(addressBytes);
                         writer.Write(endPoint.Port);
@@ -170,15 +170,16 @@ namespace FloatFromSkin
 
         private static void OnConnected(SteamClient.ConnectedCallback callback)
         {
-            if (callback.Result != EResult.OK)
+            if (callback.Result == EResult.OK)
             {
+                Console.WriteLine("Connected to Steam");
+
+                Login();
+            }
+            else {
                 Console.WriteLine("Unable to connect to Steam: {0}", callback.Result);
                 IsRunning = false;
-                return;
             }
-            Console.WriteLine("Connected to Steam");
-
-            Login();
         }
 
         private static void Login()
@@ -215,8 +216,7 @@ namespace FloatFromSkin
             if(Properties.Settings.Default.LoginID == 0)
             {
                 //Generate new LoginID (it is stored if the login is successful)
-                Random RandomInstance = new Random();
-                LoginID = (uint) RandomInstance.Next(0, int.MaxValue);
+                LoginID = (uint) new Random().Next(0, int.MaxValue);
             }
             else
             {

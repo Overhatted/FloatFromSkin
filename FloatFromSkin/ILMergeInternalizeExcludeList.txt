@@ -1,0 +1,7 @@
+﻿# this file enables fine-grained control over the visibility of the merged types if internalization is enabled
+# it contains the list of types to be excluded from the internalization process
+# see reference: http://www.blackwasp.co.uk/ILMergeInternalize.aspx
+# ex: 
+# SecondaryOne.*
+# SecondaryTwo.TestClass
+
