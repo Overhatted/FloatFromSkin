@@ -1,7 +1,4 @@
-﻿# this file enables fine-grained control over the visibility of the merged types if internalization is enabled
-# it contains the list of types to be excluded from the internalization process
-# see reference: http://www.blackwasp.co.uk/ILMergeInternalize.aspx
-# ex: 
-# SecondaryOne.*
-# SecondaryTwo.TestClass
+﻿# this file contains the partial list of the merged assemblies in the merge order
+# you can fill it from the obj\CONFIG\PROJECT.ilmerge generated on every build
+# and finetune merge order to your satisfaction
 
