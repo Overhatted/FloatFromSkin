@@ -3,12 +3,12 @@ Works as server to https://chrome.google.com/webstore/detail/float-from-skin/nlh
 
 # Why
 Since you can't make the request for the skin information from the browser you need an external server to work as a proxy between your browser and the Steam servers.  
-You could use a webserver hosted by me but that would cost me money. Also, Steam blocks you if you make more than one request per 1,4 seconds so I would need to host a lot of servers and/or make the application take a long time to respond and by the time you received your response the skin would have already been sold.  
+You could use a webserver hosted by me but that would cost me money. Also, Steam blocks you if you make more than one request per 1.4 seconds so I would need to host a lot of servers and/or make the application take a long time to respond and by the time you received your response the skin would have already been sold.  
 So I decided to make a very small app to work as a proxy and this is it.
 
 # How it works
 This is a very simple console application that receives requests from your browser over HTTP (port 8001 by default but you can easily change it).  
-It then asks the Steam Servers for information about the skin. To do this it need to be logged in a Steam Account. Because Steam is very strict about receiving too many requests per second and it will block this app temporarily (less than 5min) the app waits 1.4 seconds between requests to prevent it.  
+It then asks the Steam Servers for information about the skin. To do this it needs to be logged in a Steam Account. Because Steam is very strict about receiving too many requests per second and it will block this app temporarily (less than 5min) the app waits 1.4 seconds between requests to prevent it.  
 After it received the information on the skin it sends that information to your browser.
 
 # Account to use
