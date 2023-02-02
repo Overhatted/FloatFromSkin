@@ -34,6 +34,6 @@ This app is able to keep you logged in between sessions but it doesn't remember 
 6. Your executable is now in FloatFromSkin/bin/Debug/FloatFromSkin.exe
 
 # Linux
-Get the latest version of mono (http://www.mono-project.com/)
-Run:
+Get the latest version of mono (http://www.mono-project.com/)  
+Run:  
 `mono FloatFromSkin.exe`
