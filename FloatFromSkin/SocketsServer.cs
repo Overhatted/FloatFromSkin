@@ -2,117 +2,233 @@
 using Fleck2.Interfaces;
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Globalization;
-using System.Text.RegularExpressions;
+using System.Runtime.Caching;
+using System.Threading;
+using System.IO;
+using System.Threading.Tasks;
 
 namespace FloatFromSkin
 {
-    class SocketsServer
+    public static class SocketsServer
     {
-        public static Dictionary<ulong, Skin> Skins_Database = new Dictionary<ulong, Skin>();
+        public static AutoResetEvent QueueGetsAnElementEvent = new AutoResetEvent(false);
+        public static ConcurrentQueue<ulong> SkinsQueue = new ConcurrentQueue<ulong>();
+        private const ushort MaximumSizeOfSkinsQueue = 1000;
 
-        private static Dictionary<Guid, IWebSocketConnection> Sockets_Dict = new Dictionary<Guid, IWebSocketConnection>();
-        private static double Float_Requests_Timeout = 10;
+        public static List<SteamFloatClient> SteamClients = new List<SteamFloatClient>();
 
-        public static void Start_Sockets_Server()
+        public static ConcurrentDictionary<ulong, Skin> SkinsDatabase = new ConcurrentDictionary<ulong, Skin>();
+
+        private static ConcurrentDictionary<Guid, IWebSocketConnection> SocketsDict = new ConcurrentDictionary<Guid, IWebSocketConnection>();
+
+        public static void Start()
         {
-            WebSocketServer server = new WebSocketServer("ws://localhost:"+Properties.Settings.Default.Sockets_Port);
-
-            server.Start(socket =>
+            try
             {
-                socket.OnOpen = () => Sockets_Dict.Add(socket.ConnectionInfo.Id, socket);
-                socket.OnClose = () => Sockets_Dict.Remove(socket.ConnectionInfo.Id);
-                socket.OnMessage = message => Process_Incoming_Message(socket, message);
-            });
-        }
+                WebSocketServer Server = new WebSocketServer("ws://localhost:" + main.SettingsObj.SocketsPort);
 
-        public static void Process_Incoming_Message(IWebSocketConnection socket, string Message)
-        {
-            string[] Params_Array = Regex.Split(Message, "[A-Z]", RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(500));
+                Server.Start(socket =>
+                {
+                    socket.OnOpen = () =>
+                    {
+                        SocketsDict.TryAdd(socket.ConnectionInfo.Id, socket);
+                    };
 
-            if(Params_Array.Length != 4)
+                    socket.OnClose = () => {
+                        IWebSocketConnection SocketConnection;
+                        SocketsDict.TryRemove(socket.ConnectionInfo.Id, out SocketConnection);
+                    };
+
+                    socket.OnMessage = message =>
+                    {
+                        ProcessIncomingMessage(socket, message);
+                    };
+                });
+
+                Console.WriteLine("Sockets server successfully started on port " + main.SettingsObj.SocketsPort.ToString());
+            }
+            catch (System.Net.Sockets.SocketException)
             {
-                socket.Send("Invalid Skin String");
+                Console.WriteLine("Port " + main.SettingsObj.SocketsPort.ToString() + " is busy, please choose a different one.");
                 return;
             }
 
-            ulong First_Number = 0;
+            //Start Steam Float Clients
+            List<string> Usernames = new List<string>();
+
+            string CurrentLocation = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+            string UsernamesPath = Path.Combine(CurrentLocation, "usernames.txt");
+            if (File.Exists(UsernamesPath))
+            {
+                foreach (string Line in File.ReadLines(UsernamesPath))
+                {
+                    if (Line.Length != 0)
+                    {
+                        Usernames.Add(Line);
+                    }
+                }
+            }
+
+            foreach (string Username in Usernames)
+            {
+                SocketsServer.AddSteamFloatClient(Username);
+            }
+        }
+
+        public static SteamFloatClient GetSteamFloatClient(string Username)
+        {
+            foreach (SteamFloatClient CurrentSteamClient in SteamClients)
+            {
+                if (Username == CurrentSteamClient.UserInfo.Username)
+                {
+                    return CurrentSteamClient;
+                }
+            }
+
+            return null;
+        }
+
+        public static void AddSteamFloatClient(string Username, string Password = null, string EmailAuthCode = null, string TwoFactorAuthCode = null)
+        {
+            SteamFloatUser SteamFloatUserToAdd = new SteamFloatUser();
+            SteamFloatUserToAdd.Username = Username;
+
+            foreach (SteamFloatUser UserToCheck in main.SettingsObj.SteamFloatUsers)
+            {
+                if (UserToCheck.Username == Username)
+                {
+                    SteamFloatUserToAdd = UserToCheck;
+                    break;
+                }
+            }
+
+            SteamFloatClient SteamFloatClientAdded = new SteamFloatClient(SteamFloatUserToAdd);
+            SteamFloatClientAdded.Password = Password;
+            SteamFloatClientAdded.EmailAuthCode = EmailAuthCode;
+            SteamFloatClientAdded.TwoFactorAuthCode = TwoFactorAuthCode;
+
+            SteamClients.Add(SteamFloatClientAdded);
+
+            Task.Run(() => {
+                SteamFloatClientAdded.SteamConnect();
+            });
+        }
+
+        public static void ProcessIncomingMessage(IWebSocketConnection Socket, string Message)
+        {
+            string[] ParamsArray = Message.Split('S', 'M', 'A', 'D');
+
+            if (ParamsArray.Length != 4)
+            {
+                Socket.Send("Invalid Skin String");
+                return;
+            }
+
+            ulong FirstNumber = 0;
             ulong param_a = 0;
             ulong param_d = 0;
             try
             {
-                First_Number = ulong.Parse(Params_Array[1]);
-                param_a = ulong.Parse(Params_Array[2]);
-                param_d = ulong.Parse(Params_Array[3]);
+                FirstNumber = ulong.Parse(ParamsArray[1]);
+                param_a = ulong.Parse(ParamsArray[2]);
+                param_d = ulong.Parse(ParamsArray[3]);
             }
             catch (FormatException)
             {
-                socket.Send("Invalid Skin String");
+                Socket.Send("Invalid Skin String");
                 return;
             }
 
-            if (Skins_Database.ContainsKey(param_a))
+            if (MemoryCache.Default.Contains(param_a.ToString()))
             {
-                Skin Skin_Requested = Skins_Database[param_a];
-
-                Skin_Requested.Connection_Guids.Add(socket.ConnectionInfo.Id);
-
-                if (Skin_Requested.Has_Float_Value)
-                {
-                    Send_Skin_Responses(Skin_Requested);
-                }
-                else if(Skin_Requested.Last_Float_Request_Time.AddSeconds(Float_Requests_Timeout) < DateTime.UtcNow)
-                {
-                    SteamFloatClient.Request_Float(Skin_Requested);
-                }
+                SendSkinCachedResponse(param_a, Socket);
             }
             else
             {
-                Skin Skin_Requested = new Skin();
-
-                if (Message[0].ToString() == "S")
+                Skin SkinRequested;
+                if (SkinsDatabase.TryGetValue(param_a, out SkinRequested))
                 {
-                    Skin_Requested.param_s = First_Number;
-                    Skin_Requested.param_m = 0;
+                    if (!SkinRequested.ConnectionGuids.Contains(Socket.ConnectionInfo.Id))
+                    {
+                        SkinRequested.ConnectionGuids.Add(Socket.ConnectionInfo.Id);
+                    }
                 }
                 else
                 {
-                    Skin_Requested.param_s = 0;
-                    Skin_Requested.param_m = First_Number;
+                    SkinRequested = new Skin();
+
+                    if (Message[0].ToString() == "S")
+                    {
+                        SkinRequested.param_s = FirstNumber;
+                        SkinRequested.param_m = 0;
+                    }
+                    else
+                    {
+                        SkinRequested.param_s = 0;
+                        SkinRequested.param_m = FirstNumber;
+                    }
+
+                    SkinRequested.param_a = param_a;
+                    SkinRequested.param_d = param_d;
+
+                    SkinRequested.ConnectionGuids.Add(Socket.ConnectionInfo.Id);
+
+                    if (SkinsDatabase.TryAdd(SkinRequested.param_a, SkinRequested))
+                    {
+                        SkinsQueue.Enqueue(SkinRequested.param_a);
+
+                        QueueGetsAnElementEvent.Set();
+                    }
+                    else
+                    {
+                        Socket.Send("F" + SkinRequested.param_a.ToString() + ":Error");
+                    }
                 }
-
-                Skin_Requested.param_a = param_a;
-                Skin_Requested.param_d = param_d;
-
-                Skin_Requested.Connection_Guids.Add(socket.ConnectionInfo.Id);
-
-                Skins_Database.Add(Skin_Requested.param_a, Skin_Requested);
-
-                SteamFloatClient.Request_Float(Skin_Requested);
             }
         }
 
-        public static void Process_Skin_Response(ulong Assed_ID, float Float_Value)
+        public static void SendSkinCachedResponse(ulong AssedID, IWebSocketConnection Socket)
         {
-            Skin Skin_Responded = Skins_Database[Assed_ID];
+            string FloatValueString = (string) MemoryCache.Default.Get(AssedID.ToString());
 
-            Skin_Responded.Float_Value = Float_Value;
-            Skin_Responded.Has_Float_Value = true;
-
-            Send_Skin_Responses(Skin_Responded);
+            Socket.Send("F" + AssedID.ToString() + ":" + FloatValueString);
         }
 
-        public static void Send_Skin_Responses(Skin Skin_To_Respond)
+        public static void SendSkinResponses(ulong AssedID, float FloatValue)
         {
-            NumberFormatInfo Float_Format = new NumberFormatInfo();
-            Float_Format.NumberDecimalSeparator = ".";
-            Float_Format.NumberDecimalDigits = 9;
-
-            foreach (Guid Connection_Guid in Skin_To_Respond.Connection_Guids)
+            Skin SkinToRespond;
+            if(SkinsDatabase.TryRemove(AssedID, out SkinToRespond))
             {
-                if (Sockets_Dict.ContainsKey(Connection_Guid))
+                NumberFormatInfo FloatFormat = new NumberFormatInfo();
+                FloatFormat.NumberDecimalSeparator = ".";
+                FloatFormat.NumberDecimalDigits = 9;
+                string FloatValueString = FloatValue.ToString(FloatFormat);
+
+                MemoryCache.Default.Add(new CacheItem(AssedID.ToString(), FloatValueString), new CacheItemPolicy());
+
+                foreach (Guid ConnectionGuid in SkinToRespond.ConnectionGuids)
                 {
-                    Sockets_Dict[Connection_Guid].Send("F" + Skin_To_Respond.param_a.ToString() + ":" + Skin_To_Respond.Float_Value.ToString(Float_Format));
+                    IWebSocketConnection SocketsConnectionsConnection;
+                    if (SocketsDict.TryGetValue(ConnectionGuid, out SocketsConnectionsConnection))
+                    {
+                        SocketsConnectionsConnection.Send("F" + SkinToRespond.param_a.ToString() + ":" + FloatValueString);
+                    }
+                }
+            }
+        }
+
+        public static void SendSkinErrorMessage(Skin SkinRequested)
+        {
+            SkinsDatabase.TryRemove(SkinRequested.param_a, out SkinRequested);
+
+            foreach (Guid ConnectionGuid in SkinRequested.ConnectionGuids)
+            {
+                IWebSocketConnection SocketsConnectionsConnection;
+                if (SocketsDict.TryGetValue(ConnectionGuid, out SocketsConnectionsConnection))
+                {
+                    SocketsConnectionsConnection.Send("F" + SkinRequested.param_a.ToString() + ":Error");
                 }
             }
         }

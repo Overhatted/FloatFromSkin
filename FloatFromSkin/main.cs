@@ -2,12 +2,19 @@
 
 namespace FloatFromSkin
 {
-    class main
+    public class main
     {
+        public static Settings SettingsObj;
+
         static void Main(string[] args)
         {
-            SteamFloatClient.Start();
-            Console.ReadLine();
+            Console.Title = "Float From Skin";
+            SettingsObj = Settings.LoadFromFile();
+
+            SocketsServer.Start();
+
+            //SteamFloatClient.StartServers(SteamClients[0].UserInfo.CellID);
+            HTTPAdminServer.Start();
         }
     }
 }
