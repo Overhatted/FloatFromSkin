@@ -26,3 +26,11 @@ This app is able to keep you logged in between sessions but it doesn't remember 
 4. Enter the Password of your account
 5. Enter the SteamGuard code if necessary
 6. To exit it press ctrl+c
+
+# Build from source
+1. Download and install Visual Studio (https://www.visualstudio.com/en-us/products/visual-studio-community-vs.aspx)
+2. Click "Download ZIP" on top of this page
+3. Extract the ZIP anywhere you want
+4. Open FloatFromSkin.sln
+5. Click F6
+6. Your executable is now in FloatFromSkin/bin/Debug/FloatFromSkin.exe
