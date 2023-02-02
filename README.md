@@ -3,7 +3,7 @@ Works as server to:
 Chrome extension: https://chrome.google.com/webstore/detail/float-from-skin/nlheooelajnkbnpgjojileplpjhkcham  
 Firefox extension: https://addons.mozilla.org/en-US/firefox/addon/float-from-skin/  
 This is the same software I use in the public server at floatfromskin.tryrecords.com.  
-You can learn to host your own in Setup section.
+You can see statistics about the public server at http://floatfromskin.tryrecords.com.
 
 # Why
 Since you can't make the request for the skin information from the browser you need an external server to work as a proxy between your browser and the Steam servers.  
@@ -23,11 +23,11 @@ The admin key can be found written in the console.
 # Security
 This app is able to keep you logged in between sessions but it doesn't remember your password (just like the Official Steam Client).
 
-# Setup
+# Host your own server
 1. Download and place anywhere you want in your PC: https://github.com/Overhatted/FloatFromSkin/releases/download/v1.1.2/FloatFromSkin.exe
 2. Execute
 3. Copy the key from the console (on Windows: select the key with your mouse and then press enter to copy it into the clipboard)
-4. Go to http://localhost:8001
+4. Go to http://localhost
 5. Enter the key and press enter to login
 6. Enter the Username of the account you want to use
 7. Enter the Password of the account you want to use
